@@ -1,5 +1,7 @@
 package com.example.guessthephrase
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -12,16 +14,26 @@ import kotlin.random.Random
 
 
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var sharedPreferences: SharedPreferences
     lateinit var showPhrase: TextView
     lateinit var submit: Button
     lateinit var textEnter: TextView
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        sharedPreferences = this.getSharedPreferences(
+            getString(R.string.preference_file_key), Context.MODE_PRIVATE
+        )
+        var myMessage = sharedPreferences.getString("myMessage", "").toString()
+        // --> retrieves data from Shared Preferences
+        // We can save data with the following code
+        with(sharedPreferences.edit()) {
+            putString("myMessage", myMessage)
+            apply()
+        }
 
         //UI elements
         val showLetter = findViewById<TextView>(R.id.letter)
@@ -30,7 +42,6 @@ class MainActivity : AppCompatActivity() {
         textEnter = findViewById(R.id.textEnter) // user input
         val myRV = findViewById<RecyclerView>(R.id.rvMain)
         val myLayout = findViewById<ConstraintLayout>(R.id.screen_layout)
-
 
 
         // pre-game
@@ -52,40 +63,42 @@ class MainActivity : AppCompatActivity() {
         myRV.adapter = RecyclerViewAdapter(results)
         myRV.layoutManager = LinearLayoutManager(this)
 
-        submit.setOnClickListener{
+        submit.setOnClickListener {
             var input = textEnter.text.toString().trim().uppercase()
-            if(showPhrase.text.contains("*")){
-                if(input.isEmpty()){ Snackbar.make(myLayout, "You must enter at least one letter", Snackbar.LENGTH_SHORT).show() }
-                else{
-                    if(enterPhrase){
-                        if(input == selectedPhrase){
+            if (showPhrase.text.contains("*")) {
+                if (input.isEmpty()) {
+                    Snackbar.make(
+                        myLayout,
+                        "You must enter at least one letter",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                } else {
+                    if (enterPhrase) {
+                        if (input == selectedPhrase) {
                             results.add("Greet job")
                             showPhrase.text = selectedPhrase
                             showPhrase.textSize = 18f
                             submit.isClickable = false
-                        }
-                        else{
+                        } else {
                             results.add("Wrong guess: $input")
                         }
                         textEnter.setText("")
                         textEnter.hint = "Guess a letter"
                         enterPhrase = false
-                    }
-                    else{
+                    } else {
                         showLetter.text = input[0].toString()
-                        if(selectedPhrase.contains(input[0])){
+                        if (selectedPhrase.contains(input[0])) {
                             var counter = 0
                             var phraseChar = showPhrase.text.toString().toCharArray()
-                            for(i in 0..selectedPhrase.length-1){
-                                if(selectedPhrase[i] == input[0]) {
+                            for (i in 0..selectedPhrase.length - 1) {
+                                if (selectedPhrase[i] == input[0]) {
                                     phraseChar[i] = input[0]
                                     counter++
                                 }
                             }
                             showPhrase.text = String(phraseChar)
                             results.add("Found $counter $input(s)")
-                        }
-                        else{
+                        } else {
                             results.add("Wrong guess: $input")
                             results.add("${--remaining} guesses remaining")
                         }
@@ -94,8 +107,7 @@ class MainActivity : AppCompatActivity() {
                         enterPhrase = true
                     }
                 }
-            }
-            else{
+            } else {
                 results.add("Greet job")
                 showPhrase.text = selectedPhrase
                 showPhrase.textSize = 18f
@@ -106,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             myRV.layoutManager = LinearLayoutManager(this)
             myRV.scrollToPosition(results.size - 1)
 
-            if(remaining == 0){
+            if (remaining == 0) {
                 results.add("Game over")
                 submit.isClickable = false
             }
@@ -115,5 +127,5 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    }
+}
 
