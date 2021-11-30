@@ -4,110 +4,116 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import kotlin.random.Random
-import android.R.string
-
 
 
 class MainActivity : AppCompatActivity() {
-    var message = ArrayList<String>()
-    lateinit var header: TextView
+
+    lateinit var showPhrase: TextView
     lateinit var submit: Button
     lateinit var textEnter: TextView
-    var holdString = " "
-    var starredWord =""
-    private var beforeWord = ""
-    private var guesses = 0
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        header = findViewById(R.id.header)
-        submit = findViewById(R.id.submit)
-        textEnter = findViewById(R.id.textEnter)
+        //UI elements
+        val showLetter = findViewById<TextView>(R.id.letter)
+        showPhrase = findViewById(R.id.phrase)
+        submit = findViewById(R.id.submit) // submit button
+        textEnter = findViewById(R.id.textEnter) // user input
+        val myRV = findViewById<RecyclerView>(R.id.rvMain)
+        val myLayout = findViewById<ConstraintLayout>(R.id.screen_layout)
 
-        var randomWordsList = mutableListOf("hello","smile","nice")
-        var random = Random.nextInt(0, 2)
 
 
-        beforeWord = randomWordsList[random]
-        starredWord = beforeWord.replaceRange(0 , beforeWord.length , "★".repeat(beforeWord.length))
-        println("the before word : $beforeWord and the after word is $starredWord")
-        header.text = "guess the word: $starredWord"
+        // pre-game
+        var remaining = 10
+        val results = mutableListOf<String>()
+        val phrases = listOf<String>(
+            "A PIECE OF CAKE",
+            "NO PAIN NO GAIN",
+            "ACTIONS SPEAK LOUDER THAN WORDS",
+            "BETTER LATE THAN NEVER",
+            "CLOTHES DO NOT MAKE THE MAN",
+        )
 
-        submit.setOnClickListener {
-            val myRV = findViewById<RecyclerView>(R.id.rvMain)
-            myRV.adapter = RecycleViewAdapter(message)
-            myRV.layoutManager = LinearLayoutManager(this) // main activity
-            checkAllMessage()
-            checkLetter()
-            textEnter.text = null
-        }
-    }
+        val selectedPhrase = phrases[Random.nextInt(phrases.size)]
+        var starPhrase = Regex("[A-Za-z]").replace(selectedPhrase, "*")
+        showPhrase.text = starPhrase
+        var enterPhrase = true
 
-    fun checkAllMessage() {
-        val msg = textEnter.text.toString()
-        println("here is the message $msg")
-        if (msg.isNotEmpty() && msg.length > 1) {
-            if (guesses < 3) {
-                if (msg == beforeWord) {
-                    submit.isEnabled = false
-                    submit.isClickable = false
-                    textEnter.isEnabled = false
-                    textEnter.isClickable = false
-                    message.add(" correct answer: $msg")
-                    println("correct guess")
-                } else {
-                    guesses++
-                    message.add(
-                        "wrong guess, you guessed $msg " +
-                                "you have guessed  $guesses/3"
-                    )
-                    println("wrong guess")
+        myRV.adapter = RecyclerViewAdapter(results)
+        myRV.layoutManager = LinearLayoutManager(this)
 
-                }
-                if (guesses == 3) {
-                    submit.isEnabled = false
-                    submit.isClickable = false
-                    textEnter.isEnabled = false
-                    textEnter.isClickable = false
-                    message.add("Game over. the correct answer is $beforeWord")
-                    println("Game over")
+        submit.setOnClickListener{
+            var input = textEnter.text.toString().trim().uppercase()
+            if(showPhrase.text.contains("*")){
+                if(input.isEmpty()){ Snackbar.make(myLayout, "You must enter at least one letter", Snackbar.LENGTH_SHORT).show() }
+                else{
+                    if(enterPhrase){
+                        if(input == selectedPhrase){
+                            results.add("Greet job")
+                            showPhrase.text = selectedPhrase
+                            showPhrase.textSize = 18f
+                            submit.isClickable = false
+                        }
+                        else{
+                            results.add("Wrong guess: $input")
+                        }
+                        textEnter.setText("")
+                        textEnter.hint = "Guess a letter"
+                        enterPhrase = false
+                    }
+                    else{
+                        showLetter.text = input[0].toString()
+                        if(selectedPhrase.contains(input[0])){
+                            var counter = 0
+                            var phraseChar = showPhrase.text.toString().toCharArray()
+                            for(i in 0..selectedPhrase.length-1){
+                                if(selectedPhrase[i] == input[0]) {
+                                    phraseChar[i] = input[0]
+                                    counter++
+                                }
+                            }
+                            showPhrase.text = String(phraseChar)
+                            results.add("Found $counter $input(s)")
+                        }
+                        else{
+                            results.add("Wrong guess: $input")
+                            results.add("${--remaining} guesses remaining")
+                        }
+                        textEnter.setText("")
+                        textEnter.hint = "Guess the full phrase"
+                        enterPhrase = true
+                    }
                 }
             }
-        }
-    }
-
-    fun checkLetter(){
-        println("we are in the checkLetter")
-        var holdIndex = 0
-        val msg = textEnter.text.toString()
-        if (guesses < 3) {
-            if (beforeWord.contains(msg)) {
-                holdIndex = beforeWord.indexOf(msg)
-                holdString = holdString.replace(beforeWord[holdIndex], starredWord[holdIndex])
-                println("Hold $holdString")
-                header.text = holdString
-            } else {
-                guesses++
-                message.add(
-                    "wrong guess, you guessed $msg " +
-                            "you have guessed  $guesses/3"
-                )
-                println("wrong guess")
-
-            }
-            if (guesses == 3) {
-                submit.isEnabled = false
+            else{
+                results.add("Greet job")
+                showPhrase.text = selectedPhrase
+                showPhrase.textSize = 18f
                 submit.isClickable = false
-                textEnter.isEnabled = false
-                textEnter.isClickable = false
-                message.add("Game over. the correct answer is $beforeWord")
-                println("Game over")
+            }
+
+            myRV.adapter = RecyclerViewAdapter(results)
+            myRV.layoutManager = LinearLayoutManager(this)
+            myRV.scrollToPosition(results.size - 1)
+
+            if(remaining == 0){
+                results.add("Game over")
+                submit.isClickable = false
             }
         }
+
+
     }
-}
+
+    }
+

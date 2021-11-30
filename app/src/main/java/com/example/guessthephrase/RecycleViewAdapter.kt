@@ -1,32 +1,41 @@
 package com.example.guessthephrase
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.item_row.view.*
 
-class RecycleViewAdapter(val messages: ArrayList<String>):RecyclerView.Adapter<RecycleViewAdapter.ItemViewHolder>() {
-    class ItemViewHolder(itemView: View): RecyclerView.ViewHolder(itemView)
+class RecyclerViewAdapter(private val results: List<String>):RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
-        return ItemViewHolder(
-            LayoutInflater.from(parent.context).inflate(
-                R.layout.item_row,
-                parent,
-                false
-            )
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+    }
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): RecyclerViewAdapter.ViewHolder {
+        return ViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.item_row, parent, false)
         )
     }
 
-    override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-        val phrase = messages[position]
+    override fun onBindViewHolder(holder: RecyclerViewAdapter.ViewHolder, position: Int) {
+        val result = results[position]
+
         holder.itemView.apply {
-            tvPhrase.text = phrase
+            tvPhrase.text = result
+
+            if (result.startsWith("Wrong") || result.startsWith("Game"))
+                tvPhrase.setTextColor(Color.RED)
+            else if (result.startsWith("Found"))
+                tvPhrase.setTextColor(Color.GREEN)
+            else
+                tvPhrase.setTextColor(Color.BLACK)
         }
     }
 
-    override fun getItemCount() = messages.size //return the count of the list
-
-
+    override fun getItemCount(): Int = results.size
 }
